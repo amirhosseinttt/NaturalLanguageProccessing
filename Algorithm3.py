@@ -5,7 +5,7 @@ import spacy
 from sklearn.cluster import KMeans
 
 
-class Classifier:
+class NLP:
 
     def __init__(self, train_df, test_df):
         self.train_df = train_df

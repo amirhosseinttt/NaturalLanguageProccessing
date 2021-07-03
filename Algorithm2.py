@@ -5,7 +5,7 @@ import math
 import spacy
 
 
-class Classifier:
+class NLP:
 
     def __init__(self, train_df, test_df):
         self.train_df = train_df
