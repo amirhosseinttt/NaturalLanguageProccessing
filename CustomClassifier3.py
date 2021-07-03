@@ -1,9 +1,6 @@
 import ast
-from collections import Counter
-import math
-
+import numpy as np
 import spacy
-
 
 class Classifier:
 
@@ -11,9 +8,17 @@ class Classifier:
         self.train_df = train_df
         self.test_df = test_df
         self.nlp = spacy.load('en_core_web_md')
-        self.nlp.max_length = 1500000  # or any large value, as long as you don't run out of RAM
+
 
     def _fill_diff_dictionary(self, text_list):
+        """
+        :param text_list:
+        :return: mlist & my dict
+
+
+        IMPORTANT::: this function is a copy of the original function written in CustomClassifier2
+        """
+
         my_dict = {}
         counter = 0
         mlist = []
@@ -34,19 +39,6 @@ class Classifier:
 
         return my_dict, mlist
 
-    def _tf_idf(self, diff_dict, mlist, word: str, paragraph_index, number_of_paragraphs):
-        tmp_list = mlist[diff_dict.get(word)]
-        tf = 0
-        values = list(Counter(tmp_list).values())
-        keys = Counter(tmp_list).keys()
-        for index, key in enumerate(keys):
-            if key == paragraph_index:
-                tf = values[index]
-                break
-
-        df = len(keys)
-        idf = math.log(number_of_paragraphs / df)
-        return tf * idf
 
     def run(self):
         overview_list = []
@@ -60,5 +52,3 @@ class Classifier:
             x = ast.literal_eval(genres_list)
 
         diff_dict, mlist = self._fill_diff_dictionary(overview_list)
-        print(len(diff_dict))
-        print(self._tf_idf(diff_dict, mlist, "is", 0, len(overview_list)))

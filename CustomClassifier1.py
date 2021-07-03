@@ -21,7 +21,7 @@ class Classifier:
         mlist = [0] * 300
 
         for word in doc:
-            print(word)
+            # print(word)
             mlist += word.vector
 
         mlist /= len(doc)
@@ -62,7 +62,7 @@ class Classifier:
 
         return model
 
-    def _predict_and_compare(self, input_x, test_dict_list, model,different_genres_list):
+    def _predict_and_compare(self, input_x, test_dict_list, model, different_genres_list):
         predicted_data = model.predict(input_x)
         print(predicted_data[0])
         print(different_genres_list.keys())
@@ -74,13 +74,15 @@ class Classifier:
         vector_list = []
         for index, row in self.train_df.iterrows():
             # if index > 10: break  # DELETE THIS LINE
-            if index%100==0:print(index)
+            if index % 100 == 0:
+                print(index)
             genres_list = row['genres']
             overview = row['overview']
             vector = self._get_paragraph_mean_vector(str(overview))
             vector_list.append(vector)
             x = ast.literal_eval(genres_list)
             mlist.append([x, vector])
+
 
         standardScaler = StandardScaler()
         standardScaler.fit(vector_list)
@@ -104,4 +106,4 @@ class Classifier:
             test_dict_list.append(x)
 
         transformed_vector_list = standardScaler.transform(vector_list)
-        self._predict_and_compare(transformed_vector_list, test_dict_list, model,differ_list)
+        self._predict_and_compare(transformed_vector_list, test_dict_list, model, differ_list)
