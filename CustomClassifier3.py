@@ -1,5 +1,6 @@
 import ast
-import numpy as np
+import math
+from collections import Counter
 import spacy
 from sklearn.cluster import KMeans
 
@@ -40,24 +41,52 @@ class Classifier:
 
         return my_dict, mlist
 
-    def _clustering(self, diff_dict, number_of_clusters):
+    def _clustering(self, my_list, diff_dict, number_of_clusters):
         """
         clustering over different words using word2vec and KMeans algorithm
         """
 
         vector_list = []
         for key in diff_dict.keys():
-            vector = self.nlp(key).vector
+            vector = self.nlp(key)[0].vector
             vector_list.append(vector)
 
         kmeans = KMeans(n_clusters=number_of_clusters, random_state=0).fit(vector_list)
 
         print(kmeans.labels_)
+        print(set(kmeans.labels_))
+
+        my_dict = {}
+        for i in list(set(kmeans.labels_)):
+            tmp_list = []
+            print("\n\n\n")
+            for index, label in enumerate(kmeans.labels_):
+                if label == i:
+                    word = str(list(diff_dict.keys())[index])
+                    print(word)
+                    tmp_list.extend(my_list[diff_dict.get(word)])
+            my_dict.setdefault(i, set(tmp_list))
+
+        print("my dict is: " + str(my_dict))
+        return kmeans, my_dict
+
+    def _tf_idf(self, custom_dict: dict, k_means, word: str, paragraph: str, number_of_paragraphs):
+        tf = 0
+        for w in self.nlp(paragraph):
+            if str(w) == word:
+                tf += 1
+        word_obj = self.nlp(word)[0]
+        predicted_val = k_means.predict([word_obj.vector])[0]
+        df = len(custom_dict.get(predicted_val))
+        print(df)
+        idf = math.log(number_of_paragraphs / df)
+        return tf * idf
 
     def run(self):
         overview_list = []
         for index, row in self.train_df.iterrows():
-            if index > 10: break  # DELETE THIS LINE
+            if index > 10:
+                break  # DELETE THIS LINE
             if index % 100 == 0:
                 print(index)
             genres_list = row['genres']
@@ -66,4 +95,5 @@ class Classifier:
             x = ast.literal_eval(genres_list)
 
         diff_dict, mlist = self._fill_diff_dictionary(overview_list)
-        self._clustering(diff_dict, len(diff_dict.keys()) // 5)
+        print("K-Means algorithm just started!")
+        k_means, my_dict = self._clustering(mlist, diff_dict, len(diff_dict.keys()) // 5)
