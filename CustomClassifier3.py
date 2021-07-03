@@ -1,6 +1,8 @@
 import ast
 import numpy as np
 import spacy
+from sklearn.cluster import KMeans
+
 
 class Classifier:
 
@@ -8,7 +10,6 @@ class Classifier:
         self.train_df = train_df
         self.test_df = test_df
         self.nlp = spacy.load('en_core_web_md')
-
 
     def _fill_diff_dictionary(self, text_list):
         """
@@ -39,6 +40,19 @@ class Classifier:
 
         return my_dict, mlist
 
+    def _clustering(self, diff_dict, number_of_clusters):
+        """
+        clustering over different words using word2vec and KMeans algorithm
+        """
+
+        vector_list = []
+        for key in diff_dict.keys():
+            vector = self.nlp(key).vector
+            vector_list.append(vector)
+
+        kmeans = KMeans(n_clusters=number_of_clusters, random_state=0).fit(vector_list)
+
+        print(kmeans.labels_)
 
     def run(self):
         overview_list = []
@@ -52,3 +66,4 @@ class Classifier:
             x = ast.literal_eval(genres_list)
 
         diff_dict, mlist = self._fill_diff_dictionary(overview_list)
+        self._clustering(diff_dict, len(diff_dict.keys()) // 5)

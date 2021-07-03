@@ -1,4 +1,4 @@
-from CustomClassifier2 import Classifier
+from CustomClassifier3 import Classifier
 import pandas as pd
 import spacy
 
