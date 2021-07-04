@@ -17,11 +17,17 @@ class Classifier:
         output_dim = len(y_train[0])
 
         model = Sequential()
-        model.add(Dense(input_dim // 2, input_dim=input_dim, activation='relu'))
-        input_dim /= 2
-        while input_dim // 2 > output_dim:
-            model.add(Dense(input_dim // 2, activation='relu'))
-            input_dim /= 2
+        # model.add(Dense(input_dim // 2, input_dim=input_dim, activation='relu'))
+        # input_dim /= 2
+        # while input_dim // 2 > output_dim:
+        #     model.add(Dense(input_dim // 2, activation='relu'))
+        #     model.add(Dense(input_dim // 2, activation='relu'))
+        #     input_dim /= 2
+
+        model.add(Dense(200,input_dim=input_dim,activation='relu'))
+        model.add(Dense(100, activation='relu'))
+        model.add(Dense(50, activation='relu'))
+        model.add(Dense(20, activation='relu'))
 
         model.add(Dense(output_dim, activation='sigmoid'))
         # Compile model
@@ -32,7 +38,7 @@ class Classifier:
         return model
 
     def _predict_nn_model(self, model, x_test):
-        predicted_list = model.predict(x_test)
+        predicted_list = model.predict(np.array(x_test))
         outcome = []
         for p_list in predicted_list:
             tmp_list = []
@@ -48,17 +54,31 @@ class Classifier:
     def _evaluate(self, true_label, predicted_label):
         counter = 0
         for i in range(len(true_label)):
+            print("predicted:  " + str(predicted_label[i]))
+            print("true label: " + str(true_label[i]))
+            print()
             if true_label[i] == predicted_label[i]:
-                counter+=1
+                counter += 1
 
-        return counter/len(true_label)
-        
+        return counter / len(true_label)
+
+    def accuracy(self,trueL, predictL):
+        all = len(trueL)
+        trues = all
+        for i in range(all):
+            for j in range(len(trueL[0])):
+                if trueL[i][j] != predictL[i][j]:
+                    trues -= 1
+                    break
+        return trues / all
+
     def run(self):
-        standardScaler = StandardScaler()
-        standardScaler.fit(self.x_train)
-        self.x_train = standardScaler.transform(self.x_train)
-        self.x_test = standardScaler.transform(self.x_test)
+        # standardScaler = StandardScaler()
+        # standardScaler.fit(self.x_train)
+        # self.x_train = standardScaler.transform(self.x_train)
+        # self.x_test = standardScaler.transform(self.x_test)
 
         model = self._train_neural_network_model(self.x_train, self.y_train)
         predicted_list = self._predict_nn_model(model, self.x_test)
-        print(self._evaluate(self.y_test,predicted_list))
+        print(self._evaluate(self.y_test, predicted_list))
+        print(self.accuracy(self.y_test, predicted_list))

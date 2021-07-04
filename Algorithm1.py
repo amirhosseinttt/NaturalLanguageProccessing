@@ -1,3 +1,4 @@
+import pickle
 import ast
 import spacy
 from GeneralClassifier import Classifier
@@ -32,12 +33,6 @@ class NLP:
                 outcome.setdefault(j['id'], j['name'])
 
         return outcome
-
-    def _predict_and_compare(self, input_x, test_dict_list, model, different_genres_list):
-        predicted_data = model.predict(input_x)
-        print(predicted_data[0])
-        print(different_genres_list.keys())
-        print(test_dict_list[0])
 
     def _prepare_data_for_classifier(self, mlist, different_genres_list):
         input_x = []
@@ -74,15 +69,47 @@ class NLP:
 
         return mlist
 
+    def _save_data(self, x_train, y_train, x_test, y_test,path="algorithm1"):
+        with open(path+"/x_train.pickle", "wb") as output_file:
+            pickle.dump(x_train, output_file)
+
+        with open(path+"/y_train.pickle", "wb") as output_file:
+            pickle.dump(y_train, output_file)
+
+        with open(path+"/x_test.pickle", "wb") as output_file:
+            pickle.dump(x_test, output_file)
+
+        with open(path+"/y_test", "wb") as output_file:
+            pickle.dump(y_test, output_file)
+
+    def _load_data(self,path="algorithm1"):
+        with open(path+"/x_train.pickle", "rb") as input_file:
+            x_train = pickle.load(input_file)
+
+        with open(path+"/y_train.pickle", "rb") as input_file:
+            y_train = pickle.load(input_file)
+
+        with open(path+"/x_test.pickle", "rb") as input_file:
+            x_test = pickle.load(input_file)
+
+        with open(path+"/y_test", "rb") as input_file:
+            y_test = pickle.load(input_file)
+
+        return x_train, y_train, x_test, y_test
+
     def run(self):
 
-        mlist1 = self._get_mlist(self.train_df)
-        mlist2 = self._get_mlist(self.test_df)
+        # mlist1 = self._get_mlist(self.train_df)
+        # mlist2 = self._get_mlist(self.test_df)
+        #
+        # differ_list = self._find_different_genres(mlist1)
+        #
+        # x_train, y_train = self._prepare_data_for_classifier(mlist1, differ_list)
+        # x_test, y_test = self._prepare_data_for_classifier(mlist2, differ_list)
+        #
+        # self._save_data(x_train, y_train, x_test, y_test,"algorithm1")
 
-        differ_list = self._find_different_genres(mlist1)
+        x_train, y_train, x_test, y_test = self._load_data(path="algorithm1")
 
-        x_train, y_train = self._prepare_data_for_classifier(mlist1, differ_list)
-        x_test, y_test = self._prepare_data_for_classifier(mlist2, differ_list)
-
-        classifier = Classifier(x_train,y_train,x_test,y_test)
+        classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()

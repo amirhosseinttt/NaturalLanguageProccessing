@@ -1,4 +1,4 @@
-from Algorithm1 import NLP
+from Algorithm3 import NLP
 import pandas as pd
 import spacy
 

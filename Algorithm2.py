@@ -1,8 +1,11 @@
 import ast
+import pickle
 from collections import Counter
 import math
 
 import spacy
+
+from GeneralClassifier import Classifier
 
 
 class NLP:
@@ -34,31 +37,141 @@ class NLP:
 
         return my_dict, mlist
 
-    def _tf_idf(self, diff_dict, mlist, word: str, paragraph_index, number_of_paragraphs):
-        tmp_list = mlist[diff_dict.get(word)]
+    def _tf_idf(self, diff_dict, custom_list, word: str, paragraph_index, mlist, custom_list2=None):
+        if custom_list2 == None:
+            custom_list2 = custom_list
+        tmp_list = custom_list2[diff_dict.get(word)]
         tf = 0
-        values = list(Counter(tmp_list).values())
-        keys = Counter(tmp_list).keys()
+        # paragraph = mlist[paragraph_index][1]
+        # try:
+        #     words = self.nlp(paragraph)
+        #     for w in words:
+        #         if str(w) == word:
+        #             tf += 1
+        # except Exception:
+        #     print(paragraph_index)
+        #     print("there is an err in this Paragraph: "+str(paragraph))
+
+        counter = Counter(tmp_list)
+        values = list(counter.values())
+        keys = counter.keys()
         for index, key in enumerate(keys):
             if key == paragraph_index:
                 tf = values[index]
                 break
 
-        df = len(keys)
-        idf = math.log(number_of_paragraphs / df)
+        df = len(set(custom_list[diff_dict.get(word)]))
+        idf = math.log(len(mlist) / df)
         return tf * idf
 
-    def run(self):
+    def _prepare_data_for_classifier(self, mlist, different_words_dict, custom_list, different_genres_dict,
+                                     custom_list1=None):
+
+        input_x = []
+        labels = []
+        for index, row in enumerate(mlist):
+            if index % 100 == 0:
+                print(index)
+            tmp_list = [0] * len(different_words_dict.keys())
+            try:
+                for word in self.nlp(row[1]):
+                    key = int(different_words_dict.get(str(word)))
+                    tf_idf = self._tf_idf(different_words_dict, custom_list, str(word), index, mlist, custom_list1)
+                    tmp_list[key] = tf_idf
+
+            except Exception:
+                pass
+            input_x.append(tmp_list)
+            
+            tmp_list = []
+            for genre_id in different_genres_dict.keys():
+                sw = True
+                for dictionary in row[0]:
+
+                    if genre_id in dict(dictionary).values():
+                        tmp_list.append(1)
+                        sw = False
+                        break
+                if sw:
+                    tmp_list.append(0)
+
+            labels.append(tmp_list)
+
+        return input_x, labels
+
+    def _get_mlist(self, df):
+        mlist = []
         overview_list = []
-        for index, row in self.train_df.iterrows():
-            if index > 10: break  # DELETE THIS LINE
+        for index, row in df.iterrows():
+            # if index > 10: break  # DELETE THIS LINE
             if index % 100 == 0:
                 print(index)
             genres_list = row['genres']
             overview = row['overview']
-            overview_list.append(overview)
             x = ast.literal_eval(genres_list)
+            overview_list.append(overview)
+            mlist.append([x, overview])
 
-        diff_dict, mlist = self._fill_diff_dictionary(overview_list)
+        return mlist, overview_list
+
+    def _find_different_genres(self, mlist):
+        outcome = {}
+        for i in mlist:
+            for j in i[0]:
+                outcome.setdefault(j['id'], j['name'])
+
+        return outcome
+
+    def _save_data(self, x_train, y_train, x_test, y_test, path="algorithm2"):
+        with open(path + "/x_train.pickle", "wb") as output_file:
+            pickle.dump(x_train, output_file)
+
+        with open(path + "/y_train.pickle", "wb") as output_file:
+            pickle.dump(y_train, output_file)
+
+        with open(path + "/x_test.pickle", "wb") as output_file:
+            pickle.dump(x_test, output_file)
+
+        with open(path + "/y_test", "wb") as output_file:
+            pickle.dump(y_test, output_file)
+
+    def _load_data(self, path="algorithm2"):
+        with open(path + "/x_train.pickle", "rb") as input_file:
+            x_train = pickle.load(input_file)
+
+        with open(path + "/y_train.pickle", "rb") as input_file:
+            y_train = pickle.load(input_file)
+
+        with open(path + "/x_test.pickle", "rb") as input_file:
+            x_test = pickle.load(input_file)
+
+        with open(path + "/y_test", "rb") as input_file:
+            y_test = pickle.load(input_file)
+
+        return x_train, y_train, x_test, y_test
+
+    def run(self):
+
+        mlist, overview_list = self._get_mlist(self.train_df)
+        diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
         print(len(diff_dict))
-        print(self._tf_idf(diff_dict, mlist, "is", 0, len(overview_list)))
+        print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
+        print("creating x_train & y_train just strated...")
+        different_genres_dict = self._find_different_genres(mlist)
+        x_train, y_train = self._prepare_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
+        print(x_train[0])
+        print(y_train[0])
+        mlist1, overview_list1 = self._get_mlist(self.test_df)
+        _, custom_list1 = self._fill_diff_dictionary(overview_list1)
+        print("creating x_test & y_test just strated...")
+        x_test, y_test = self._prepare_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
+                                                           custom_list1)
+        print(x_test[0])
+        print(y_test[0])
+
+        self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
+
+        # x_train, y_train, x_test, y_test = self._load_data(path="algorithm1")
+
+        classifier = Classifier(x_train, y_train, x_test, y_test)
+        classifier.run()
