@@ -152,26 +152,26 @@ class NLP:
 
     def run(self):
 
-        mlist, overview_list = self._get_mlist(self.train_df)
-        diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
-        print(len(diff_dict))
-        print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
-        print("creating x_train & y_train just strated...")
-        different_genres_dict = self._find_different_genres(mlist)
-        x_train, y_train = self._prepare_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
-        print(x_train[0])
-        print(y_train[0])
-        mlist1, overview_list1 = self._get_mlist(self.test_df)
-        _, custom_list1 = self._fill_diff_dictionary(overview_list1)
-        print("creating x_test & y_test just strated...")
-        x_test, y_test = self._prepare_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
-                                                           custom_list1)
-        print(x_test[0])
-        print(y_test[0])
+        # mlist, overview_list = self._get_mlist(self.train_df)
+        # diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
+        # print(len(diff_dict))
+        # print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
+        # print("creating x_train & y_train just strated...")
+        # different_genres_dict = self._find_different_genres(mlist)
+        # x_train, y_train = self._prepare_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
+        # print(x_train[0])
+        # print(y_train[0])
+        # mlist1, overview_list1 = self._get_mlist(self.test_df)
+        # _, custom_list1 = self._fill_diff_dictionary(overview_list1)
+        # print("creating x_test & y_test just strated...")
+        # x_test, y_test = self._prepare_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
+        #                                                    custom_list1)
+        # print(x_test[0])
+        # print(y_test[0])
+        #
+        # self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
 
-        self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
-
-        # x_train, y_train, x_test, y_test = self._load_data(path="algorithm1")
+        x_train, y_train, x_test, y_test = self._load_data(path="algorithm2")
 
         classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()

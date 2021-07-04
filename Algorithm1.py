@@ -16,7 +16,7 @@ class NLP:
 
         doc = self.nlp(string)
 
-        mlist = [0] * 300
+        mlist = [0] * len(doc[0].vector)
 
         for word in doc:
             # print(word)
@@ -39,6 +39,7 @@ class NLP:
         labels = []
         for row in mlist:
             input_x.append(row[1])
+
             tmp_list = []
             for genre_id in different_genres_list.keys():
                 sw = True
@@ -69,36 +70,36 @@ class NLP:
 
         return mlist
 
-    def _save_data(self, x_train, y_train, x_test, y_test,path="algorithm1"):
-        with open(path+"/x_train.pickle", "wb") as output_file:
+    def _save_data(self, x_train, y_train, x_test, y_test, path="algorithm1"):
+        with open(path + "/x_train.pickle", "wb") as output_file:
             pickle.dump(x_train, output_file)
 
-        with open(path+"/y_train.pickle", "wb") as output_file:
+        with open(path + "/y_train.pickle", "wb") as output_file:
             pickle.dump(y_train, output_file)
 
-        with open(path+"/x_test.pickle", "wb") as output_file:
+        with open(path + "/x_test.pickle", "wb") as output_file:
             pickle.dump(x_test, output_file)
 
-        with open(path+"/y_test", "wb") as output_file:
+        with open(path + "/y_test", "wb") as output_file:
             pickle.dump(y_test, output_file)
 
-    def _load_data(self,path="algorithm1"):
-        with open(path+"/x_train.pickle", "rb") as input_file:
+    def _load_data(self, path="algorithm1"):
+        with open(path + "/x_train.pickle", "rb") as input_file:
             x_train = pickle.load(input_file)
 
-        with open(path+"/y_train.pickle", "rb") as input_file:
+        with open(path + "/y_train.pickle", "rb") as input_file:
             y_train = pickle.load(input_file)
 
-        with open(path+"/x_test.pickle", "rb") as input_file:
+        with open(path + "/x_test.pickle", "rb") as input_file:
             x_test = pickle.load(input_file)
 
-        with open(path+"/y_test", "rb") as input_file:
+        with open(path + "/y_test", "rb") as input_file:
             y_test = pickle.load(input_file)
 
         return x_train, y_train, x_test, y_test
 
     def run(self):
-
+        #
         # mlist1 = self._get_mlist(self.train_df)
         # mlist2 = self._get_mlist(self.test_df)
         #
@@ -107,7 +108,7 @@ class NLP:
         # x_train, y_train = self._prepare_data_for_classifier(mlist1, differ_list)
         # x_test, y_test = self._prepare_data_for_classifier(mlist2, differ_list)
         #
-        # self._save_data(x_train, y_train, x_test, y_test,"algorithm1")
+        # self._save_data(x_train, y_train, x_test, y_test, "algorithm1")
 
         x_train, y_train, x_test, y_test = self._load_data(path="algorithm1")
 

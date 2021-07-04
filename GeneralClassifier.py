@@ -81,15 +81,17 @@ class Classifier:
         return predicted_data
 
     def run(self):
-        # standardScaler = StandardScaler()
-        # standardScaler.fit(self.x_train)
-        # self.x_train = standardScaler.transform(self.x_train)
-        # self.x_test = standardScaler.transform(self.x_test)
+        standardScaler = StandardScaler()
+        standardScaler.fit(self.x_train)
+        self.x_train = standardScaler.transform(self.x_train)
+        self.x_test = standardScaler.transform(self.x_test)
 
-        # model = self._train_neural_network_model(self.x_train, self.y_train)
-        # predicted_list = self._predict_nn_model(model, self.x_test)
-        # print(self._evaluate(self.y_test, predicted_list))
+        model = self._train_neural_network_model(self.x_train, self.y_train)
+        predicted_list = self._predict_nn_model(model, self.x_test)
+        mlp_accuracy = self._accuracy(self.y_test, predicted_list)
+        print("MLP accuracy is: " + str(mlp_accuracy))
 
-        multi_output_classifier_acc = self._accuracy(self.y_test, self._train_multi_output_classifier(self.x_train, self.y_train, self.x_test))
-        print("accuracy of multi_output_classifier is: "+str(multi_output_classifier_acc))
-
+        multi_output_classifier_acc = self._accuracy(self.y_test,
+                                                     self._train_multi_output_classifier(self.x_train, self.y_train,
+                                                                                         self.x_test))
+        print("accuracy of multi_output_classifier is: " + str(multi_output_classifier_acc))
