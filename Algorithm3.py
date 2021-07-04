@@ -142,7 +142,8 @@ class NLP:
 
         different_words_dict, frequency_list = self._fill_diff_dictionary(train_overview_list)
         print("K-Means algorithm just started!")
-        k_means, my_dict = self._clustering(frequency_list, different_words_dict, len(different_words_dict.keys()) // 6)
+        k_means, my_dict = self._clustering(frequency_list, different_words_dict,
+                                            len(different_words_dict.keys()) // 100)
 
         x_train, y_train = self._prepare_data_for_classifier(train_mlist, self._find_different_genres(train_mlist),
                                                              my_dict, k_means)
@@ -150,8 +151,6 @@ class NLP:
         test_mlist, test_overview_list = self._get_mlist(self.test_df)
         x_test, y_test = self._prepare_data_for_classifier(test_mlist, self._find_different_genres(train_mlist),
                                                            my_dict, k_means)
-
-
 
         classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()

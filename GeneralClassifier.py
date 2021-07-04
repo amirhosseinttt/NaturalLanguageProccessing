@@ -1,6 +1,9 @@
 import numpy as np
 from keras import Sequential
 from keras.layers import Dense
+from sklearn.datasets import make_multilabel_classification
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
 
@@ -24,7 +27,7 @@ class Classifier:
         #     model.add(Dense(input_dim // 2, activation='relu'))
         #     input_dim /= 2
 
-        model.add(Dense(200,input_dim=input_dim,activation='relu'))
+        model.add(Dense(200, input_dim=input_dim, activation='relu'))
         model.add(Dense(100, activation='relu'))
         model.add(Dense(50, activation='relu'))
         model.add(Dense(20, activation='relu'))
@@ -51,7 +54,7 @@ class Classifier:
 
         return outcome
 
-    def _evaluate(self, true_label, predicted_label):
+    def _evaluate(self, true_label: list, predicted_label: list):
         counter = 0
         for i in range(len(true_label)):
             print("predicted:  " + str(predicted_label[i]))
@@ -62,7 +65,7 @@ class Classifier:
 
         return counter / len(true_label)
 
-    def accuracy(self,trueL, predictL):
+    def _accuracy(self, trueL, predictL):
         all = len(trueL)
         trues = all
         for i in range(all):
@@ -72,13 +75,21 @@ class Classifier:
                     break
         return trues / all
 
+    def _train_multi_output_classifier(self, x_train, y_train, x_test):
+        clf = MultiOutputClassifier(KNeighborsClassifier()).fit(x_train, y_train)
+        predicted_data = list(clf.predict(x_test))
+        return predicted_data
+
     def run(self):
         # standardScaler = StandardScaler()
         # standardScaler.fit(self.x_train)
         # self.x_train = standardScaler.transform(self.x_train)
         # self.x_test = standardScaler.transform(self.x_test)
 
-        model = self._train_neural_network_model(self.x_train, self.y_train)
-        predicted_list = self._predict_nn_model(model, self.x_test)
-        print(self._evaluate(self.y_test, predicted_list))
-        print(self.accuracy(self.y_test, predicted_list))
+        # model = self._train_neural_network_model(self.x_train, self.y_train)
+        # predicted_list = self._predict_nn_model(model, self.x_test)
+        # print(self._evaluate(self.y_test, predicted_list))
+
+        multi_output_classifier_acc = self._accuracy(self.y_test, self._train_multi_output_classifier(self.x_train, self.y_train, self.x_test))
+        print("accuracy of multi_output_classifier is: "+str(multi_output_classifier_acc))
+
