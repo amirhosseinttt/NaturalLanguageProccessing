@@ -5,6 +5,7 @@ from sklearn.datasets import make_multilabel_classification
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import hamming_loss, accuracy_score, jaccard_score
 
 
 class Classifier:
@@ -88,10 +89,10 @@ class Classifier:
 
         model = self._train_neural_network_model(self.x_train, self.y_train)
         predicted_list = self._predict_nn_model(model, self.x_test)
-        mlp_accuracy = self._accuracy(self.y_test, predicted_list)
+        mlp_accuracy = jaccard_score(self.y_test, predicted_list, average='samples')
         print("MLP accuracy is: " + str(mlp_accuracy))
 
-        multi_output_classifier_acc = self._accuracy(self.y_test,
-                                                     self._train_multi_output_classifier(self.x_train, self.y_train,
-                                                                                         self.x_test))
+        predicted_list = self._train_multi_output_classifier(self.x_train, self.y_train, self.x_test)
+
+        multi_output_classifier_acc = jaccard_score(self.y_test, predicted_list, average='samples')
         print("accuracy of multi_output_classifier is: " + str(multi_output_classifier_acc))

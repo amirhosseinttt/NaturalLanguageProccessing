@@ -64,8 +64,7 @@ class NLP:
         idf = math.log(len(mlist) / df)
         return tf * idf
 
-    def _prepare_data_for_classifier(self, mlist, different_words_dict, custom_list, different_genres_dict,
-                                     custom_list1=None):
+    def _prepare_train_data_for_classifier(self, mlist, different_words_dict, custom_list, different_genres_dict):
 
         input_x = []
         labels = []
@@ -76,13 +75,13 @@ class NLP:
             try:
                 for word in self.nlp(row[1]):
                     key = int(different_words_dict.get(str(word)))
-                    tf_idf = self._tf_idf(different_words_dict, custom_list, str(word), index, mlist, custom_list1)
+                    tf_idf = self._tf_idf(different_words_dict, custom_list, str(word), index, mlist)
                     tmp_list[key] = tf_idf
 
             except Exception:
                 pass
-            input_x.append(tmp_list)
-            
+            input_x.append(tmp_list.copy())
+
             tmp_list = []
             for genre_id in different_genres_dict.keys():
                 sw = True
@@ -113,6 +112,43 @@ class NLP:
             mlist.append([x, overview])
 
         return mlist, overview_list
+
+    def _idf(self, N, df):
+        return math.log(N / df)
+
+    def _prepare_test_data_for_classifier(self, mlist1, diff_dict, custom_list, different_genres_dict):
+        input_x = []
+        labels = []
+        for index, row in enumerate(mlist1):
+            if index % 100 == 0:
+                print(index)
+            tmp_list = [0] * len(diff_dict.keys())
+            try:
+                for word in self.nlp(row[1]):
+                    key = int(diff_dict.get(str(word)))
+                    idf = self._idf(len(custom_list), len(set(custom_list[key])))
+
+                    tmp_list[key] += idf
+
+            except Exception:
+                pass
+            input_x.append(tmp_list.copy())
+
+            tmp_list = []
+            for genre_id in different_genres_dict.keys():
+                sw = True
+                for dictionary in row[0]:
+
+                    if genre_id in dict(dictionary).values():
+                        tmp_list.append(1)
+                        sw = False
+                        break
+                if sw:
+                    tmp_list.append(0)
+
+            labels.append(tmp_list)
+
+        return input_x, labels
 
     def _find_different_genres(self, mlist):
         outcome = {}
@@ -152,26 +188,25 @@ class NLP:
 
     def run(self):
 
-        # mlist, overview_list = self._get_mlist(self.train_df)
-        # diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
-        # print(len(diff_dict))
-        # print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
-        # print("creating x_train & y_train just strated...")
-        # different_genres_dict = self._find_different_genres(mlist)
-        # x_train, y_train = self._prepare_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
-        # print(x_train[0])
-        # print(y_train[0])
-        # mlist1, overview_list1 = self._get_mlist(self.test_df)
-        # _, custom_list1 = self._fill_diff_dictionary(overview_list1)
-        # print("creating x_test & y_test just strated...")
-        # x_test, y_test = self._prepare_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
-        #                                                    custom_list1)
-        # print(x_test[0])
-        # print(y_test[0])
-        #
-        # self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
+        mlist, overview_list = self._get_mlist(self.train_df)
+        diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
+        print(len(diff_dict))
+        print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
+        print("creating x_train & y_train just strated...")
+        different_genres_dict = self._find_different_genres(mlist)
+        x_train, y_train = self._prepare_train_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
+        print(x_train[0])
+        print(y_train[0])
+        mlist1, overview_list1 = self._get_mlist(self.test_df)
+        _, custom_list1 = self._fill_diff_dictionary(overview_list1)
+        print("creating x_test & y_test just strated...")
+        x_test, y_test = self._prepare_test_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict)
+        print(x_test[0])
+        print(y_test[0])
 
-        x_train, y_train, x_test, y_test = self._load_data(path="algorithm2")
+        self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
+
+        # x_train, y_train, x_test, y_test = self._load_data(path="algorithm2")
 
         classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()
