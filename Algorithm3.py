@@ -1,8 +1,9 @@
 import ast
-import math
+import pickle
 from collections import Counter
+import math
+
 import spacy
-from sklearn.cluster import KMeans
 
 from GeneralClassifier import Classifier
 
@@ -13,16 +14,9 @@ class NLP:
         self.train_df = train_df
         self.test_df = test_df
         self.nlp = spacy.load('en_core_web_md')
+        self.nlp.max_length = 1500000  # or any large value, as long as you don't run out of RAM
 
     def _fill_diff_dictionary(self, text_list):
-        """
-        :param text_list:
-        :return: mlist & my dict
-
-
-        IMPORTANT::: this function is a copy of the original function written in CustomClassifier2
-        """
-
         my_dict = {}
         counter = 0
         mlist = []
@@ -43,59 +37,48 @@ class NLP:
 
         return my_dict, mlist
 
-    def _clustering(self, my_list, diff_dict, number_of_clusters):
-        """
-        clustering over different words using word2vec and KMeans algorithm
-        """
+    def _tf_idf(self, diff_dict, custom_list, word: str, paragraph_index, mlist):
+        tmp_list = custom_list[diff_dict.get(word)]
+        tf = 0
+        # paragraph = mlist[paragraph_index][1]
+        # try:
+        #     words = self.nlp(paragraph)
+        #     for w in words:
+        #         if str(w) == word:
+        #             tf += 1
+        # except Exception:
+        #     print(paragraph_index)
+        #     print("there is an err in this Paragraph: "+str(paragraph))
 
-        vector_list = []
-        for key in diff_dict.keys():
-            vector = self.nlp(key)[0].vector
-            vector_list.append(vector)
+        counter = Counter(tmp_list)
+        values = list(counter.values())
+        keys = counter.keys()
+        for index, key in enumerate(keys):
+            if key == paragraph_index:
+                tf = values[index]
+                break
 
-        kmeans = KMeans(n_clusters=number_of_clusters, random_state=0).fit(vector_list)
+        df = len(set(custom_list[diff_dict.get(word)]))
+        idf = math.log(len(mlist) / df)
+        return tf * idf
 
-        print(kmeans.labels_)
-        print(set(kmeans.labels_))
-
-        my_dict = {}
-        for i in list(set(kmeans.labels_)):
-            tmp_list = []
-            print("\n\n\n")
-            for index, label in enumerate(kmeans.labels_):
-                if label == i:
-                    word = str(list(diff_dict.keys())[index])
-                    print(word)
-                    tmp_list.extend(my_list[diff_dict.get(word)])
-            my_dict.setdefault(i, set(tmp_list))
-
-        print("my dict is: " + str(my_dict))
-        return kmeans, my_dict
-
-    def _idf(self, custom_dict: dict, k_means, word: str, number_of_paragraphs):
-        word_obj = self.nlp(word)[0]
-        predicted_val = k_means.predict([word_obj.vector])[0]
-        df = len(custom_dict.get(predicted_val))
-        idf = math.log(number_of_paragraphs / df)
-        return idf
-
-    def _prepare_data_for_classifier(self, mlist, different_genres_dict, custom_dict, k_means):
+    def _prepare_train_data_for_classifier(self, mlist, different_words_dict, custom_list, different_genres_dict):
 
         input_x = []
         labels = []
         for index, row in enumerate(mlist):
             if index % 100 == 0:
                 print(index)
-            tmp_list = [0] * len(custom_dict)
+            tmp_list = [0] * len(different_words_dict.keys())
             try:
                 for word in self.nlp(row[1]):
-                    predicted_val = k_means.predict([word.vector])[0]
-                    idf = self._idf(custom_dict, k_means, str(word), len(mlist))
-                    tmp_list[predicted_val] += idf
+                    key = int(different_words_dict.get(str(word)))
+                    tf_idf = self._tf_idf(different_words_dict, custom_list, str(word), index, mlist)
+                    tmp_list[key] = tf_idf
 
             except Exception:
                 pass
-            input_x.append(tmp_list)
+            input_x.append(tmp_list.copy())
 
             tmp_list = []
             for genre_id in different_genres_dict.keys():
@@ -111,21 +94,34 @@ class NLP:
 
             labels.append(tmp_list)
 
-        return input_x, labels
+        tmp = [0] * self.nlp("help")[0].vector
+        output = []
+        for _ in range(len(input_x)):
+            output.append(tmp.copy())
 
-    def _find_different_genres(self, mlist):
-        outcome = {}
-        for i in mlist:
-            for j in i[0]:
-                outcome.setdefault(j['id'], j['name'])
+        for index1 in range(len(different_words_dict)):
+            if index1 % 100 ==0:
+                print(index1)
+            vector = self.nlp(list(different_words_dict.keys())[index1])[0].vector
+            summ = 0
+            x = 0
+            for index2, row in enumerate(input_x):
+                x = index2
+                if row[index1] == 0:
+                    continue
+                output[index2] += vector * row[index1]
+                summ += row[index1]
 
-        return outcome
+            if summ==0:
+                summ = 1
+            output[x] /= summ
+
+        return output, labels
 
     def _get_mlist(self, df):
         mlist = []
         overview_list = []
         for index, row in df.iterrows():
-            # if index > 10: break  # DELETE THIS LINE
             if index % 100 == 0:
                 print(index)
             genres_list = row['genres']
@@ -136,21 +132,129 @@ class NLP:
 
         return mlist, overview_list
 
+    def _idf(self, N, df):
+        return math.log(N / df)
+
+    def _prepare_test_data_for_classifier(self, mlist1, diff_dict, custom_list, different_genres_dict, N):
+        input_x = []
+        labels = []
+        for index, row in enumerate(mlist1):
+            if index % 100 == 0:
+                print(index)
+            tmp_list = [0] * len(diff_dict.keys())
+            try:
+                for word in self.nlp(row[1]):
+                    key = int(diff_dict.get(str(word)))
+                    df = len(set(custom_list[key]))
+                    # print("key is: "+str(str(word))+"    df is: "+str(df))
+                    idf = self._idf(N, df)
+                    if idf < 0:
+                        print(str(df) + " " + str(len(mlist1)))
+
+                    tmp_list[key] += idf
+
+            except Exception:
+                pass
+            input_x.append(tmp_list.copy())
+
+            tmp_list1 = []
+            for genre_id in different_genres_dict.keys():
+                sw = True
+                for dictionary in row[0]:
+
+                    if genre_id in dict(dictionary).values():
+                        tmp_list1.append(1)
+                        sw = False
+                        break
+                if sw:
+                    tmp_list1.append(0)
+
+            labels.append(tmp_list1.copy())
+
+        tmp = [0] * self.nlp("help")[0].vector
+        output = []
+        for _ in range(len(input_x)):
+            output.append(tmp.copy())
+
+        for index1 in range(len(diff_dict)):
+            if index1 % 100 ==0:
+                print(index1)
+            vector = self.nlp(list(diff_dict.keys())[index1])[0].vector
+            summ = 0
+            x = 0
+            for index2, row in enumerate(input_x):
+                x = index2
+                if row[index1] == 0:
+                    continue
+                output[index2] += vector * row[index1]
+                summ += row[index1]
+            if summ==0:
+                summ = 1
+            output[x] /= summ
+
+        return output, labels
+
+    def _find_different_genres(self, mlist):
+        outcome = {}
+        for i in mlist:
+            for j in i[0]:
+                outcome.setdefault(j['id'], j['name'])
+
+        return outcome
+
+    def _save_data(self, x_train, y_train, x_test, y_test, path="algorithm3"):
+        with open(path + "/x_train.pickle", "wb") as output_file:
+            pickle.dump(x_train, output_file)
+
+        with open(path + "/y_train.pickle", "wb") as output_file:
+            pickle.dump(y_train, output_file)
+
+        with open(path + "/x_test.pickle", "wb") as output_file:
+            pickle.dump(x_test, output_file)
+
+        with open(path + "/y_test", "wb") as output_file:
+            pickle.dump(y_test, output_file)
+
+    def _load_data(self, path="algorithm3"):
+        with open(path + "/x_train.pickle", "rb") as input_file:
+            x_train = pickle.load(input_file)
+
+        with open(path + "/y_train.pickle", "rb") as input_file:
+            y_train = pickle.load(input_file)
+
+        with open(path + "/x_test.pickle", "rb") as input_file:
+            x_test = pickle.load(input_file)
+
+        with open(path + "/y_test", "rb") as input_file:
+            y_test = pickle.load(input_file)
+
+        return x_train, y_train, x_test, y_test
+
     def run(self):
 
-        train_mlist, train_overview_list = self._get_mlist(self.train_df)
+        mlist, overview_list = self._get_mlist(self.train_df)
+        diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
+        print(len(diff_dict))
+        print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
+        print("creating x_train & y_train just strated...")
+        different_genres_dict = self._find_different_genres(mlist)
+        x_train, y_train = self._prepare_train_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
+        print(x_train[0])
+        print(x_train[1])
+        print(x_train[2])
+        print(y_train[0])
+        mlist1, overview_list1 = self._get_mlist(self.test_df)
+        print("creating x_test & y_test just strated...")
+        x_test, y_test = self._prepare_test_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
+                                                                len(mlist))
+        print(x_test[0])
+        print(x_test[1])
+        print(x_test[2])
+        print(y_test[0])
 
-        different_words_dict, frequency_list = self._fill_diff_dictionary(train_overview_list)
-        print("K-Means algorithm just started!")
-        k_means, my_dict = self._clustering(frequency_list, different_words_dict,
-                                            len(different_words_dict.keys()) // 100)
+        self._save_data(x_train, y_train, x_test, y_test, "algorithm3")
 
-        x_train, y_train = self._prepare_data_for_classifier(train_mlist, self._find_different_genres(train_mlist),
-                                                             my_dict, k_means)
-
-        test_mlist, test_overview_list = self._get_mlist(self.test_df)
-        x_test, y_test = self._prepare_data_for_classifier(test_mlist, self._find_different_genres(train_mlist),
-                                                           my_dict, k_means)
+        # x_train, y_train, x_test, y_test = self._load_data(path="algorithm3")
 
         classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()
