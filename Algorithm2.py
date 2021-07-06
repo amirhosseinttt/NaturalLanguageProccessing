@@ -77,9 +77,8 @@ class NLP:
                     tmp_list[key] = tf_idf
 
             except Exception:
-                # print("index is: "+str(index))
-                # return
-                pass
+                print("index is: "+str(index))
+
             input_x.append(tmp_list.copy())
 
             tmp_list = []
@@ -125,7 +124,10 @@ class NLP:
             tmp_list = [0] * len(diff_dict.keys())
             try:
                 for word in self.nlp(row[1]):
-                    key = int(diff_dict.get(str(word)))
+                    word_str = diff_dict.get(str(word))
+                    if word_str is None:
+                        continue
+                    key = int(word_str)
                     df = len(set(custom_list[key]))
                     # print("key is: "+str(str(word))+"    df is: "+str(df))
                     idf = self._idf(N, df)
@@ -134,8 +136,9 @@ class NLP:
 
                     tmp_list[key] += idf
 
-            except Exception:
+            except Exception as e:
                 pass
+
             input_x.append(tmp_list.copy())
 
             tmp_list1 = []
@@ -192,29 +195,29 @@ class NLP:
 
     def run(self):
 
-        # mlist, overview_list = self._get_mlist(self.train_df)
-        # diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
-        # print(len(diff_dict))
-        # print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
-        # print("creating x_train & y_train just strated...")
-        # different_genres_dict = self._find_different_genres(mlist)
-        # x_train, y_train = self._prepare_train_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
-        # print(x_train[0])
-        # print(x_train[1])
-        # print(x_train[2])
-        # print(y_train[0])
-        # mlist1, overview_list1 = self._get_mlist(self.test_df)
-        # print("creating x_test & y_test just strated...")
-        # x_test, y_test = self._prepare_test_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
-        #                                                         len(mlist))
-        # print(x_test[0])
-        # print(x_test[1])
-        # print(x_test[2])
-        # print(y_test[0])
-        #
-        # self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
+        mlist, overview_list = self._get_mlist(self.train_df)
+        diff_dict, custom_list = self._fill_diff_dictionary(overview_list)
+        print(len(diff_dict))
+        print(self._tf_idf(diff_dict, custom_list, "is", 0, mlist))
+        print("creating x_train & y_train just strated...")
+        different_genres_dict = self._find_different_genres(mlist)
+        x_train, y_train = self._prepare_train_data_for_classifier(mlist, diff_dict, custom_list, different_genres_dict)
+        print(x_train[0])
+        print(x_train[1])
+        print(x_train[2])
+        print(y_train[0])
+        mlist1, overview_list1 = self._get_mlist(self.test_df)
+        print("creating x_test & y_test just strated...")
+        x_test, y_test = self._prepare_test_data_for_classifier(mlist1, diff_dict, custom_list, different_genres_dict,
+                                                                len(mlist))
+        print(x_test[0])
+        print(x_test[1])
+        print(x_test[2])
+        print(y_test[0])
 
-        x_train, y_train, x_test, y_test = self._load_data(path="algorithm2")
+        self._save_data(x_train, y_train, x_test, y_test, "algorithm2")
+
+        # x_train, y_train, x_test, y_test = self._load_data(path="algorithm2")
 
         classifier = Classifier(x_train, y_train, x_test, y_test)
         classifier.run()

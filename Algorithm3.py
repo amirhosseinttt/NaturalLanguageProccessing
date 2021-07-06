@@ -100,7 +100,7 @@ class NLP:
             output.append(tmp.copy())
 
         for index1 in range(len(different_words_dict)):
-            if index1 % 100 ==0:
+            if index1 % 100 == 0:
                 print(index1)
             vector = self.nlp(list(different_words_dict.keys())[index1])[0].vector
             summ = 0
@@ -112,7 +112,7 @@ class NLP:
                 output[index2] += vector * row[index1]
                 summ += row[index1]
 
-            if summ==0:
+            if summ == 0:
                 summ = 1
             output[x] /= summ
 
@@ -144,7 +144,10 @@ class NLP:
             tmp_list = [0] * len(diff_dict.keys())
             try:
                 for word in self.nlp(row[1]):
-                    key = int(diff_dict.get(str(word)))
+                    word_str = diff_dict.get(str(word))
+                    if word_str is None:
+                        continue
+                    key = int(word_str)
                     df = len(set(custom_list[key]))
                     # print("key is: "+str(str(word))+"    df is: "+str(df))
                     idf = self._idf(N, df)
@@ -153,7 +156,7 @@ class NLP:
 
                     tmp_list[key] += idf
 
-            except Exception:
+            except Exception as e:
                 pass
             input_x.append(tmp_list.copy())
 
@@ -177,7 +180,7 @@ class NLP:
             output.append(tmp.copy())
 
         for index1 in range(len(diff_dict)):
-            if index1 % 100 ==0:
+            if index1 % 100 == 0:
                 print(index1)
             vector = self.nlp(list(diff_dict.keys())[index1])[0].vector
             summ = 0
@@ -188,7 +191,7 @@ class NLP:
                     continue
                 output[index2] += vector * row[index1]
                 summ += row[index1]
-            if summ==0:
+            if summ == 0:
                 summ = 1
             output[x] /= summ
 

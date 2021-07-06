@@ -6,6 +6,7 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import hamming_loss, accuracy_score, jaccard_score
+from sklearn.svm import LinearSVC
 
 
 class Classifier:
@@ -76,8 +77,13 @@ class Classifier:
                     break
         return trues / all
 
-    def _train_multi_output_classifier(self, x_train, y_train, x_test):
+    def _train_k_neighbors_classifier(self, x_train, y_train, x_test):
         clf = MultiOutputClassifier(KNeighborsClassifier()).fit(x_train, y_train)
+        predicted_data = list(clf.predict(x_test))
+        return predicted_data
+
+    def _train_svm_classifier(self, x_train, y_train, x_test):
+        clf = MultiOutputClassifier(LinearSVC()).fit(x_train, y_train)
         predicted_data = list(clf.predict(x_test))
         return predicted_data
 
@@ -92,7 +98,13 @@ class Classifier:
         mlp_accuracy = jaccard_score(self.y_test, predicted_list, average='samples')
         print("MLP accuracy is: " + str(mlp_accuracy))
 
-        predicted_list = self._train_multi_output_classifier(self.x_train, self.y_train, self.x_test)
+        predicted_list = self._train_k_neighbors_classifier(self.x_train, self.y_train, self.x_test)
 
         multi_output_classifier_acc = jaccard_score(self.y_test, predicted_list, average='samples')
-        print("accuracy of multi_output_classifier is: " + str(multi_output_classifier_acc))
+        print("accuracy of k_neighbors_classifier: " + str(multi_output_classifier_acc))
+
+
+        predicted_list = self._train_svm_classifier(self.x_train, self.y_train, self.x_test)
+
+        multi_output_classifier_acc = jaccard_score(self.y_test, predicted_list, average='samples')
+        print("accuracy of svm_classifier: " + str(multi_output_classifier_acc))
