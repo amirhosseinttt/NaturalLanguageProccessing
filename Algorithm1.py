@@ -16,7 +16,7 @@ class NLP:
 
         doc = self.nlp(string)
 
-        mlist = [0] * len(doc[0].vector)
+        mlist = [0] * 300
 
         for word in doc:
             # print(word)
@@ -26,11 +26,11 @@ class NLP:
 
         return mlist
 
-    def _find_different_genres(self, mlist):
+    def _find_different_genres(self, my_special_list):
         outcome = {}
-        for i in mlist:
+        for i in my_special_list:
             for j in i[0]:
-                outcome.setdefault(j['id'], j['name'])
+                outcome[j['id']] = j['name']
 
         return outcome
 

@@ -157,11 +157,11 @@ class NLP:
 
         return input_x, labels
 
-    def _find_different_genres(self, mlist):
+    def _find_different_genres(self, my_special_list):
         outcome = {}
-        for i in mlist:
+        for i in my_special_list:
             for j in i[0]:
-                outcome.setdefault(j['id'], j['name'])
+                outcome[j['id']] = j['name']
 
         return outcome
 
